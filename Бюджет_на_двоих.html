@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Наш Бюджет</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        /* Скрытие стрелок у input type number */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
+        }
+        input[type="number"] { -moz-appearance: textfield; }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col items-center">
+
+    <div class="w-full max-w-md w-full flex-grow flex flex-col relative pb-24">
+        
+        <!-- Шапка -->
+        <header class="bg-white px-5 py-4 sticky top-0 z-10 shadow-sm flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <h1 class="font-bold text-lg text-slate-800">Наш Бюджет</h1>
+            </div>
+            <div class="text-xs font-medium text-slate-500" id="currentMonthDisplay">Сентябрь</div>
+        </header>
+
+        <main class="flex-grow p-4 space-y-5">
+            
+            <!-- Главная карточка: Дневной лимит -->
+            <div class="rounded-2xl p-5 text-white bg-gradient-to-br from-slate-800 to-slate-900 shadow-lg relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-5 rounded-full blur-xl"></div>
+                
+                <h2 class="text-slate-300 text-sm font-medium mb-1">Остаток на сегодня</h2>
+                <div class="flex items-baseline gap-2 mb-4">
+                    <span class="text-4xl font-bold tracking-tight" id="todayRemaining">0</span>
+                    <span class="text-lg text-slate-400">zł</span>
+                </div>
+                
+                <div class="flex justify-between items-center text-sm border-t border-slate-700 pt-3">
+                    <div class="text-slate-400">Лимит: <span class="text-white font-medium" id="dailyLimitText">80 zł</span></div>
+                    <div class="text-slate-400">Потрачено: <span class="text-rose-400 font-medium" id="todaySpentText">0 zł</span></div>
+                </div>
+            </div>
+
+            <!-- Карточка: Месячная статистика -->
+            <div class="glass-card rounded-2xl p-4">
+                <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-slate-400"></i> Статистика за месяц
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div class="text-xs text-slate-500 mb-1">Доход (Руслан)</div>
+                        <div class="font-semibold text-slate-700">7 600 <span class="text-xs text-slate-400 font-normal">zł</span></div>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div class="text-xs text-slate-500 mb-1">Доход (Девушка)</div>
+                        <div class="font-semibold text-slate-700">6 000 <span class="text-xs text-slate-400 font-normal">zł</span></div>
+                    </div>
+                </div>
+                
+                <div class="bg-rose-50 p-3 rounded-xl border border-rose-100 mb-3 flex justify-between items-center">
+                    <div class="text-sm text-rose-700 font-medium">Обязательные траты</div>
+                    <div class="font-semibold text-rose-700">- 5 310 <span class="text-xs font-normal">zł</span></div>
+                </div>
+
+                <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex justify-between items-center">
+                    <div>
+                        <div class="text-sm text-emerald-700 font-bold">В копилку за месяц</div>
+                        <div class="text-xs text-emerald-600/70">Остаток с учетом всех трат</div>
+                    </div>
+                    <div class="text-xl font-bold text-emerald-600" id="monthSaved">0 <span class="text-sm font-normal">zł</span></div>
+                </div>
+            </div>
+
+            <!-- Список трат за сегодня -->
+            <div>
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <h3 class="text-sm font-bold text-slate-700">Траты сегодня</h3>
+                    <span class="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-full font-medium" id="todayCount">0 операций</span>
+                </div>
+                
+                <div id="expensesList" class="space-y-2">
+                    <!-- Элементы списка будут добавлены через JS -->
+                    <div class="text-center py-6 text-slate-400 text-sm" id="emptyState">
+                        <i class="fa-regular fa-face-smile-wink text-2xl mb-2 block"></i>
+                        Пока нет трат за сегодня. Отличное начало!
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Индикатор загрузки -->
+            <div id="loadingIndicator" class="text-center py-4 text-slate-400 hidden">
+                <i class="fa-solid fa-spinner fa-spin"></i> Синхронизация...
+            </div>
+        </main>
+
+        <!-- Фиксированная форма снизу -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] safe-bottom z-20">
+            <div class="max-w-md mx-auto">
+                <form id="addExpenseForm" class="flex gap-2">
+                    <div class="flex-grow flex bg-slate-100 rounded-xl overflow-hidden border border-slate-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
+                        <input type="number" id="amountInput" placeholder="Сумма" required min="0.01" step="0.01"
+                            class="w-1/3 bg-transparent py-3 px-3 outline-none text-slate-700 font-semibold placeholder-slate-400 border-r border-slate-200">
+                        <input type="text" id="descInput" placeholder="На что потратили?" required
+                            class="w-2/3 bg-transparent py-3 px-3 outline-none text-slate-700 text-sm placeholder-slate-400">
+                    </div>
+                    <button type="submit" 
+                        class="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white w-12 rounded-xl flex items-center justify-center transition-colors shadow-sm shrink-0 disabled:opacity-50">
+                        <i class="fa-solid fa-plus text-lg"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Модальное окно ошибки -->
+        <div id="errorModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity opacity-0">
+            <div class="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl transform scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center mb-4 mx-auto text-xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="text-center font-bold text-slate-800 text-lg mb-2">Упс, ошибка!</h3>
+                <p id="errorMessage" class="text-center text-slate-500 text-sm mb-5"></p>
+                <button onclick="closeErrorModal()" class="w-full bg-slate-800 text-white font-medium py-3 rounded-xl">Понятно</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Импорты Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Константы бюджета (можно сделать настраиваемыми в будущем)
+        const INCOME_RUSLAN = 7600;
+        const INCOME_GIRLFRIEND = 6000;
+        const FIXED_EXPENSES = 5310;
+        const DAILY_LIMIT = 80;
+        const TOTAL_INCOME = INCOME_RUSLAN + INCOME_GIRLFRIEND;
+        const AVAILABLE_FUNDS = TOTAL_INCOME - FIXED_EXPENSES;
+
+        // Инициализация Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'budget-tracker-default';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        
+        let app, db, auth;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } catch (error) {
+            showError("Не удалось подключиться к базе данных. Проверьте настройки.");
+            console.error(error);
+        }
+
+        // Состояние приложения
+        let expenses = [];
+        
+        // Форматирование текущего месяца (для шардирования коллекций и отображения)
+        const currentDate = new Date();
+        const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+        const currentMonthKey = `${currentDate.getFullYear()}_${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+        
+        document.getElementById('currentMonthDisplay').textContent = monthNames[currentDate.getMonth()] + ' ' + currentDate.getFullYear();
+
+        // Получение сегодняшней даты в формате YYYY-MM-DD
+        const getTodayString = () => {
+            const d = new Date();
+            const offset = d.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(d - offset)).toISOString().split('T')[0];
+            return localISOTime;
+        };
+
+        async function init() {
+            showLoading(true);
+            try {
+                // Авторизация
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                // Подписка на данные текущего месяца
+                // ВАЖНО: Используем публичную коллекцию, чтобы вы оба могли видеть данные. 
+                // В реальном приложении лучше использовать общий ID группы.
+                const sharedRoomId = "ruslan_and_gf_budget"; 
+                const expensesRef = collection(db, 'artifacts', appId, 'public', 'data', `expenses_${sharedRoomId}_${currentMonthKey}`);
+                
+                onSnapshot(expensesRef, (snapshot) => {
+                    expenses = [];
+                    snapshot.forEach((doc) => {
+                        expenses.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    // Сортировка: новые сверху (в памяти, согласно правилам API)
+                    expenses.sort((a, b) => b.timestamp - a.timestamp);
+                    
+                    updateUI();
+                    showLoading(false);
+                }, (error) => {
+                    console.error("Ошибка при получении данных:", error);
+                    showError("Ошибка синхронизации данных. Попробуйте обновить страницу.");
+                    showLoading(false);
+                });
+
+            } catch (error) {
+                console.error("Ошибка инициализации:", error);
+                showError("Не удалось войти в систему.");
+                showLoading(false);
+            }
+        }
+
+        function updateUI() {
+            const todayStr = getTodayString();
+            
+            let spentToday = 0;
+            let spentThisMonth = 0;
+            const todayExpenses = [];
+
+            // Расчеты
+            expenses.forEach(exp => {
+                spentThisMonth += exp.amount;
+                if (exp.date === todayStr) {
+                    spentToday += exp.amount;
+                    todayExpenses.push(exp);
+                }
+            });
+
+            // Обновление лимитов
+            const remainingToday = DAILY_LIMIT - spentToday;
+            const remainingTodayEl = document.getElementById('todayRemaining');
+            
+            remainingTodayEl.textContent = formatMoney(remainingToday);
+            
+            // Цветовая индикация лимита
+            if (remainingToday < 0) {
+                remainingTodayEl.className = "text-4xl font-bold tracking-tight text-rose-400";
+            } else if (remainingToday < DAILY_LIMIT * 0.2) {
+                remainingTodayEl.className = "text-4xl font-bold tracking-tight text-amber-400";
+            } else {
+                remainingTodayEl.className = "text-4xl font-bold tracking-tight text-white";
+            }
+
+            document.getElementById('todaySpentText').textContent = `${formatMoney(spentToday)} zł`;
+            
+            // Обновление накоплений
+            const currentSaved = AVAILABLE_FUNDS - spentThisMonth;
+            const monthSavedEl = document.getElementById('monthSaved');
+            monthSavedEl.innerHTML = `${formatMoney(currentSaved)} <span class="text-sm font-normal">zł</span>`;
+            if (currentSaved < 0) {
+                monthSavedEl.classList.remove('text-emerald-600');
+                monthSavedEl.classList.add('text-rose-600');
+            } else {
+                monthSavedEl.classList.remove('text-rose-600');
+                monthSavedEl.classList.add('text-emerald-600');
+            }
+
+            // Рендер списка
+            renderExpensesList(todayExpenses);
+        }
+
+        function renderExpensesList(todayExpenses) {
+            const listEl = document.getElementById('expensesList');
+            const emptyEl = document.getElementById('emptyState');
+            const countEl = document.getElementById('todayCount');
+
+            countEl.textContent = `${todayExpenses.length} ${getPlural(todayExpenses.length, 'операция', 'операции', 'операций')}`;
+
+            if (todayExpenses.length === 0) {
+                listEl.innerHTML = '';
+                listEl.appendChild(emptyEl);
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            emptyEl.classList.add('hidden');
+            listEl.innerHTML = '';
+
+            todayExpenses.forEach(exp => {
+                const item = document.createElement('div');
+                item.className = "glass-card rounded-xl p-3 flex justify-between items-center group animate-fade-in";
+                
+                // Форматируем время
+                const timeStr = new Date(exp.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-slate-500">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <div class="truncate pr-2">
+                            <div class="font-medium text-slate-800 text-sm truncate">${escapeHTML(exp.description)}</div>
+                            <div class="text-xs text-slate-400">${timeStr} &middot; добавлено</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 shrink-0">
+                        <div class="font-bold text-slate-700 whitespace-nowrap">-${formatMoney(exp.amount)} <span class="text-xs font-normal">zł</span></div>
+                        <button onclick="deleteExpense('${exp.id}')" class="text-slate-300 hover:text-rose-500 transition-colors p-2 bg-slate-50 hover:bg-rose-50 rounded-lg">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        // Добавление новой траты
+        document.getElementById('addExpenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!auth.currentUser) return;
+
+            const amountInput = document.getElementById('amountInput');
+            const descInput = document.getElementById('descInput');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            const amount = parseFloat(amountInput.value.replace(',', '.'));
+            const desc = descInput.value.trim();
+
+            if (isNaN(amount) || amount <= 0 || !desc) {
+                showError("Пожалуйста, введите корректную сумму и описание.");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            try {
+                const sharedRoomId = "ruslan_and_gf_budget"; 
+                const expensesRef = collection(db, 'artifacts', appId, 'public', 'data', `expenses_${sharedRoomId}_${currentMonthKey}`);
+                
+                await addDoc(expensesRef, {
+                    amount: amount,
+                    description: desc,
+                    date: getTodayString(),
+                    timestamp: Date.now(),
+                    userId: auth.currentUser.uid
+                });
+
+                amountInput.value = '';
+                descInput.value = '';
+                // Скролл вниз, если добавили
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            } catch (error) {
+                console.error("Ошибка при добавлении:", error);
+                showError("Не удалось добавить трату. Проверьте интернет.");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-plus text-lg"></i>';
+            }
+        });
+
+        // Удаление траты (доступна глобально через window)
+        window.deleteExpense = async (id) => {
+            if (!auth.currentUser) return;
+            // Кастомное подтверждение вместо alert()
+            if(!confirmCustom("Удалить эту трату?")) return; // Заглушка, ниже реализуем без блокирующего confirm
+            
+            try {
+                const sharedRoomId = "ruslan_and_gf_budget"; 
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', `expenses_${sharedRoomId}_${currentMonthKey}`, id);
+                await deleteDoc(docRef);
+            } catch (error) {
+                console.error("Ошибка при удалении:", error);
+                showError("Не удалось удалить запись.");
+            }
+        };
+
+        // Т.к. нельзя использовать confirm(), удаляем сразу при клике. 
+        // В интерфейсе кнопка корзины маленькая, но для прототипа этого достаточно.
+        window.deleteExpense = async (id) => {
+            if (!auth.currentUser) return;
+            try {
+                const sharedRoomId = "ruslan_and_gf_budget"; 
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', `expenses_${sharedRoomId}_${currentMonthKey}`, id);
+                await deleteDoc(docRef);
+            } catch (error) {
+                console.error("Ошибка при удалении:", error);
+                showError("Не удалось удалить запись.");
+            }
+        };
+
+        // Утилиты
+        function formatMoney(amount) {
+            return Number(amount).toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag])
+            );
+        }
+
+        function getPlural(number, one, two, five) {
+            let n = Math.abs(number);
+            n %= 100;
+            if (n >= 5 && n <= 20) return five;
+            n %= 10;
+            if (n === 1) return one;
+            if (n >= 2 && n <= 4) return two;
+            return five;
+        }
+
+        // Модальное окно ошибки (вместо alert)
+        const modal = document.getElementById('errorModal');
+        const modalMsg = document.getElementById('errorMessage');
+        
+        window.showError = (msg) => {
+            modalMsg.textContent = msg;
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        };
+
+        window.closeErrorModal = () => {
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        };
+
+        function showLoading(show) {
+            const loader = document.getElementById('loadingIndicator');
+            if (show) loader.classList.remove('hidden');
+            else loader.classList.add('hidden');
+        }
+
+        // Добавляем CSS анимации через JS
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+            .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        `;
+        document.head.appendChild(style);
+
+        // Старт
+        init();
+
+    </script>
+</body>
+</html>
